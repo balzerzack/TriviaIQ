@@ -1169,145 +1169,37 @@ export default function TriviaGenerator() {
     setIsGenerating(true);
     setStep('generating');
 
-    const difficultyDescriptions = {
-      easy: {
-        description: 'easy to answer, requiring general knowledge that most people would know',
-        examples: 'Basic facts, common knowledge, well-known information accessible to casual audiences',
-        challenge: 'Should be answerable by someone with basic general education'
-      },
-      medium: {
-        description: 'moderately challenging, requiring specific knowledge or deeper understanding',
-        examples: 'Requires attention to detail, some specialized knowledge, or connecting multiple concepts',
-        challenge: 'Should require thought and some specific knowledge beyond casual familiarity'
-      },
-      hard: {
-        description: 'difficult and detailed, requiring expert-level knowledge or obscure facts',
-        examples: 'Deep knowledge, obscure details, technical specifics, lesser-known historical facts',
-        challenge: 'Should challenge even knowledgeable enthusiasts in the subject'
-      },
-      impossible: {
-        description: 'extremely challenging, requiring deep expert knowledge, rare historical details, or highly specialized information',
-        examples: 'Extremely specific dates, ultra-obscure facts, technical minutiae, esoteric knowledge',
-        challenge: 'Should only be answerable by true experts or those with encyclopedic knowledge'
-      }
-    };
-
-    // Generate a random seed to encourage diversity
-    const diversitySeed = Math.random().toString(36).substring(7);
-
     try {
       const response = await fetch("/api/generate-questions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    prompt: `Generate ${questionCount} trivia questions`,
-    questionCount: parseInt(questionCount)
-  })
-});
-
-CRITICAL DIFFICULTY CALIBRATION FOR ${selectedDifficulty.toUpperCase()}:
-- Level: ${difficultyDescriptions[selectedDifficulty].description}
-- Examples: ${difficultyDescriptions[selectedDifficulty].examples}
-- Challenge standard: ${difficultyDescriptions[selectedDifficulty].challenge}
-
-DIFFICULTY-SPECIFIC REQUIREMENTS:
-${selectedDifficulty === 'easy' ? `
-- Ask about widely known facts, basic information, famous names/events
-- Questions should be straightforward with clear, commonly known answers
-- Avoid obscure details or technical specifics
-- Examples: "What ocean is the largest?", "Who painted the Mona Lisa?"
-` : ''}${selectedDifficulty === 'medium' ? `
-- Ask about specific details that require dedicated knowledge
-- Include some technical terms or specific dates/numbers
-- Require understanding beyond surface-level familiarity
-- Examples: "In what year was X founded?", "Which country produces the most Y?"
-` : ''}${selectedDifficulty === 'hard' ? `
-- Ask about obscure facts, specific technical details, rare knowledge
-- Include precise dates, lesser-known figures, specialized terminology
-- Require deep knowledge or research to answer
-- Examples: "What was the original name of X before 1847?", "Which element has atomic number 79?"
-` : ''}${selectedDifficulty === 'impossible' ? `
-- Ask about extremely specific details known only to experts
-- Include ultra-precise facts, rare historical minutiae, esoteric knowledge
-- Should stump even dedicated enthusiasts
-- Examples: "What was the exact time of day X occurred?", "Name the third assistant director on Y film"
-` : ''}
-
-CRITICAL: PREVENT CROSS-DIFFICULTY DUPLICATES
-- DO NOT ask questions that could appear at other difficulty levels
-- Each question should be UNIQUE to its difficulty level
-- Avoid generic questions that could be made easier or harder
-- Use difficulty-appropriate specificity:
-  * EASY: "What year did World War II end?" (1945 - widely known)
-  * MEDIUM: "What battle marked the turning point in the Pacific during WWII?" (Midway - requires specific knowledge)
-  * HARD: "Who was the commander of the USS Enterprise at the Battle of Midway?" (Raymond Spruance - obscure detail)
-  * IMPOSSIBLE: "What was the exact time the first torpedo hit the USS Yorktown at Midway?" (ultra-specific)
-- If a topic is exhausted at a difficulty level, move to completely different aspects
-- NEVER create a question that could be answered at a different difficulty by adding/removing detail
-
-CRITICAL: NEVER GIVE AWAY THE ANSWER IN THE QUESTION
-- Do NOT include the answer or obvious hints within the question text
-- Avoid phrasing like "What is the capital of France, known for the Eiffel Tower?" (gives away Paris)
-- Bad example: "What 1994 film starring Tom Hanks featured the quote 'Life is like a box of chocolates'?" (gives away Forrest Gump)
-- Good example: "Which 1994 film features the quote 'Life is like a box of chocolates'?"
-- Bad example: "In which Shakespeare play does the character Hamlet say 'To be or not to be'?" (gives away the play)
-- Good example: "Which Shakespeare character speaks the line 'To be or not to be'?"
-- The question should genuinely test knowledge, not just reading comprehension
-
-FACTUAL ACCURACY REQUIREMENTS:
-- Every answer must be a verified, indisputable fact
-- Use only information from reliable sources (historical records, official statistics, documented events)
-- For dates, names, numbers, and specific details: BE ABSOLUTELY CERTAIN they are correct
-- If a fact is disputed or has multiple versions, choose a different question topic
-- Do NOT include questions with ambiguous or debatable answers
-- For current events/statistics: only use well-documented, unchanging facts
-- Double-check all numerical data, dates, and proper nouns for accuracy
-
-DIVERSITY & QUALITY REQUIREMENTS:
-- Each question must be completely unique and diverse - avoid similar themes, time periods, or subject matter
-- Questions should be engaging, surprising, and educational
-- Answers should be specific, clear, and unambiguous
-- Vary the types of questions: dates, people, places, events, concepts, records, achievements, etc.
-- Draw from a broad range of subtopics within "${prompt}" to maximize variety
-- Avoid common or overused trivia questions
-- Make questions interesting and worth knowing
-
-ACCURACY VERIFICATION:
-- Before including any question, verify the answer is 100% correct
-- Reject questions where you're not completely certain of the answer
-- Use concrete, documented facts only
-- Avoid speculation, estimates, or "approximately" type answers
-
-Diversity seed: ${diversitySeed}
-
-Return ONLY a JSON array with this exact format, no other text:
-[
-  {
-    "question": "Question text here?",
-    "answer": "Precise, factual answer here",
-    "difficulty": "${selectedDifficulty}",
-    "category": "Specific category"
-  }
-]
-
-Remember: 
-1. Accuracy is paramount - every answer must be verifiably correct
-2. Questions must NOT give away the answer
-3. Difficulty must be precisely calibrated to ${selectedDifficulty} level
-4. Questions must be UNIQUE to this difficulty - no cross-difficulty duplicates` 
-            }
-          ],
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          questionCount: parseInt(questionCount),
+          difficulty: selectedDifficulty,
+          topic: selectedSubtopic || selectedTopic
         })
       });
 
+      if (!response.ok) {
+        throw new Error('Failed to generate questions');
+      }
+
       const data = await response.json();
-      const content = data.content[0].text;
       
-      // Clean the response and parse JSON
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const questions = JSON.parse(cleanContent);
+      // Handle response from serverless function
+      let questions;
+      if (data.content && Array.isArray(data.content)) {
+        const content = typeof data.content[0] === 'object' && data.content[0].text 
+          ? data.content[0].text 
+          : JSON.stringify(data.content);
+        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        questions = JSON.parse(cleanContent);
+      } else {
+        questions = data.content;
+      }
       
       setTriviaQuestions(questions);
       setStep('results');
@@ -1411,61 +1303,37 @@ Remember:
     }
 
     try {
-     const response = await fetch("/api/generate-questions", {
-  method: "POST",
-  headers: {
-    "Content-Type": "application/json"
-  },
-  body: JSON.stringify({
-    prompt: `Generate 20 trivia questions for mini-game`,
-    questionCount: 20
-  })
-});
-
-REQUIREMENTS:
-- Difficulty: ${gameDifficulty}
-- Each question must have 4 answer options (A, B, C, D)
-- Only ONE correct answer per question
-- Make questions rapid-fire appropriate (can be answered in 5-10 seconds)
-- Questions should be clear and concise
-- Answers must be 100% factually correct
-- Vary the question types and topics
-
-CRITICAL: PREVENT CROSS-DIFFICULTY DUPLICATES
-- Questions must be UNIQUE to the ${gameDifficulty} difficulty level
-- Do NOT create questions that could appear at other difficulty levels
-- Use difficulty-appropriate specificity for ${gameDifficulty}:
-  * EASY: Well-known facts, famous names, basic information
-  * MEDIUM: Specific details requiring dedicated knowledge
-  * HARD: Obscure facts, technical details, lesser-known information
-  * IMPOSSIBLE: Ultra-specific details, rare minutiae, expert-only knowledge
-- Each question should be impossible to answer at easier difficulty levels
-- If a topic is exhausted, move to different aspects entirely
-
-NEVER GIVE AWAY THE ANSWER:
-- Do not include the answer or obvious hints in the question
-- Questions should genuinely test knowledge
-
-Return ONLY a JSON array:
-[
-  {
-    "question": "Question text?",
-    "options": ["Option A", "Option B", "Option C", "Option D"],
-    "correctAnswer": 0,
-    "category": "Category"
-  }
-]
-
-The correctAnswer should be the index (0-3) of the correct option.`
-            }
-          ],
+      const response = await fetch("/api/generate-questions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          prompt: prompt,
+          questionCount: 20,
+          difficulty: gameDifficulty,
+          topic: gameSubtopic || gameTopic,
+          genre: gameGenre
         })
       });
 
+      if (!response.ok) {
+        throw new Error('Failed to generate game questions');
+      }
+
       const data = await response.json();
-      const content = data.content[0].text;
-      const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      const questions = JSON.parse(cleanContent);
+      
+      // Handle response from serverless function
+      let questions;
+      if (data.content && Array.isArray(data.content)) {
+        const content = typeof data.content[0] === 'object' && data.content[0].text 
+          ? data.content[0].text 
+          : JSON.stringify(data.content);
+        const cleanContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        questions = JSON.parse(cleanContent);
+      } else {
+        questions = data.content;
+      }
       
       setGameQuestions(questions);
       setCurrentQuestionIndex(0);
