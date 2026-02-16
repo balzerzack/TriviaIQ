@@ -1196,18 +1196,16 @@ export default function TriviaGenerator() {
     const diversitySeed = Math.random().toString(36).substring(7);
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [
-            { 
-              role: "user", 
-              content: `You are an expert trivia question creator with a focus on 100% factual accuracy and proper difficulty calibration. Generate exactly ${questionCount} unique, high-quality trivia questions about: ${prompt}
+      const response = await fetch("/api/generate-questions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    prompt: `Generate ${questionCount} trivia questions`,
+    questionCount: parseInt(questionCount)
+  })
+});
 
 CRITICAL DIFFICULTY CALIBRATION FOR ${selectedDifficulty.toUpperCase()}:
 - Level: ${difficultyDescriptions[selectedDifficulty].description}
@@ -1413,18 +1411,16 @@ Remember:
     }
 
     try {
-      const response = await fetch("https://api.anthropic.com/v1/messages", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          model: "claude-sonnet-4-20250514",
-          max_tokens: 4000,
-          messages: [
-            { 
-              role: "user", 
-              content: `Generate exactly 20 multiple choice trivia questions about: ${prompt}
+     const response = await fetch("/api/generate-questions", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json"
+  },
+  body: JSON.stringify({
+    prompt: `Generate 20 trivia questions for mini-game`,
+    questionCount: 20
+  })
+});
 
 REQUIREMENTS:
 - Difficulty: ${gameDifficulty}
