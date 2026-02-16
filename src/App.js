@@ -1313,7 +1313,8 @@ export default function TriviaGenerator() {
           questionCount: 20,
           difficulty: gameDifficulty,
           topic: gameSubtopic || gameTopic,
-          genre: gameGenre
+          genre: gameGenre,
+          gameMode: 'mini-game' // Flag for multiple choice format
         })
       });
 
